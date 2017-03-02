@@ -1,0 +1,18 @@
+extends layout
+
+block content
+  h1=title
+  p(style="color:red;")=content
+  p='乐育内部安卓测试分发系统'
+    form(method='post', action='/upload', enctype='multipart/form-data')
+      span="apk文件:"
+      input(name='file', type='file', multiple='mutiple')
+      br
+      br
+      span="升级修复描述:"
+      br
+      textarea(name='des', type='text',style="min-width:300px;min-height:200px;")
+      br
+      br
+      input(name='btnUp', type='submit',value='上传文件')
+  footer(style="width:100%;text-align:center;margin-top:200px;font-size:20px;")='Loyo内部apk测试分发系统'
