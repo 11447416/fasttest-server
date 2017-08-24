@@ -2,10 +2,14 @@ var express = require('express');
 var process = require('child_process');
 var router = express.Router();
 var config=require('./config');
+var onBuilding=false;
 
 //调用shell文件，完成服务器打包
 router.get('/', function(req, res, next) {
-    console.log(JSON.stringify(req.query))
+    if(onBuilding){
+        res.send("服务器有一个打包任务未结束，请稍后再提交打包任务");
+        return;
+    }
     var branch = req.query['branch'];//分支
     var commit = req.query['commit'];//节点
     var des = req.query['des'];//描述
@@ -20,10 +24,11 @@ router.get('/', function(req, res, next) {
     }else if(!user){
         res.send("user 不能为空");
     }else{
+        onBuilding=true;
         res.writeHead(200, {'Content-Type': 'text/stream; charset=utf-8'});
         res.write("1、打包程序启动\n");
         res.write("2、拉取远程分支"+branch+"\n");
-        exeCmd("git",["pull","origin",branch],res,function (res) {
+        exeCmd("git",["checkout","-b",branch,"origin/"+branch],res,function (res) {
             var node=branch;
             if(commit)node=commit;
             res.write("3、检出代码"+node+"\n");
@@ -96,5 +101,6 @@ function exeCmd(cmd, argv, res, next) {
 //统一结束返回，方便修改结束标记
 function end(res) {
     res.end();
+    onBuilding=false;
 }
 module.exports = router;
