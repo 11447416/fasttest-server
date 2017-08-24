@@ -29,9 +29,9 @@ router.get('/', function(req, res, next) {
             res.write("3、检出代码"+node+"\n");
             exeCmd("git",["checkout",node],res,function (res) {
                 res.write("4、清理环境\n");
-                exeCmd("sh",["gradlew","clean"],res,function (res) {
+                exeCmd("./gradlew",["clean"],res,function (res) {
                     res.write("5、开始编译\n");
-                    exeCmd("sh",["gradlew",type],res,function (res) {
+                    exeCmd("./gradlew",[type],res,function (res) {
                         res.write("6、编译完成，重命名文件\n");
                         process.exec("cp app/build/outputs/apk/*.apk app/build/outputs/apk/test.apk",{cwd:config.buildPath},function (err,stdout,stderr) {
                             if(err){
