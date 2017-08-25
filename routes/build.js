@@ -38,9 +38,12 @@ router.get('/', function (req, res, next) {
                     //本地没有这个分支，先创建这个分支
                     exeCmd("git",["checkout","-b",branch,"origin/"+branch],res,build)
                 }else {
-                    build(res)
+                    exeCmd("git",["checkout",branch],res,function (res) {
+                        exeCmd("git",["pull","origin",branch],res,function (res) {
+                            build(res)
+                        })
+                    })
                 }
-
             }
         });
 
