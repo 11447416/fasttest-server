@@ -28,34 +28,37 @@ router.get('/', function(req, res, next) {
         res.writeHead(200, {'Content-Type': 'text/stream; charset=utf-8'});
         res.write("1、打包程序启动\n");
         res.write("2、拉取远程分支"+branch+"\n");
-        exeCmd("git",["checkout","-b",branch,"origin/"+branch],res,function (res) {
-            var node=branch;
-            if(commit)node=commit;
-            res.write("3、检出代码"+node+"\n");
-            exeCmd("git",["checkout",node],res,function (res) {
-                res.write("4、清理环境\n");
-                exeCmd("./gradlew",["clean"],res,function (res) {
-                    res.write("5、开始编译\n");
-                    exeCmd("./gradlew",[type],res,function (res) {
-                        res.write("6、编译完成，重命名文件\n");
-                        process.exec("cp app/build/outputs/apk/*.apk app/build/outputs/apk/test.apk",{cwd:config.buildPath},function (err,stdout,stderr) {
-                            if(err){
-                                res.write(stderr+"\n");
-                                end(res);
-                            }else {
-                                res.write("7、开始上传\n");
-                                exeCmd("sh",["package.sh","-u","app/build/outputs/apk/test.apk","-n","测试打包，请忽略","-w",user],res,function (res) {
-                                    res.write("打包任务完成");
-                                    end(res)
-                                    process.exec("rm app/build/outputs/apk/test.apk",{cwd:config.buildPath});
-                                })
-                            }
-                        });
+        exeCmd("git","fetch","origin",branch+":"+branch,function (res) {
+            exeCmd("git",["checkout",branch],res,function (res) {
+                var node=branch;
+                if(commit)node=commit;
+                res.write("3、检出代码"+node+"\n");
+                exeCmd("git",["checkout",node],res,function (res) {
+                    res.write("4、清理环境\n");
+                    exeCmd("./gradlew",["clean"],res,function (res) {
+                        res.write("5、开始编译\n");
+                        exeCmd("./gradlew",[type],res,function (res) {
+                            res.write("6、编译完成，重命名文件\n");
+                            process.exec("cp app/build/outputs/apk/*.apk app/build/outputs/apk/test.apk",{cwd:config.buildPath},function (err,stdout,stderr) {
+                                if(err){
+                                    res.write(stderr+"\n");
+                                    end(res);
+                                }else {
+                                    res.write("7、开始上传\n");
+                                    exeCmd("sh",["package.sh","-u","app/build/outputs/apk/test.apk","-n","测试打包，请忽略","-w",user],res,function (res) {
+                                        res.write("打包任务完成");
+                                        end(res)
+                                        process.exec("rm app/build/outputs/apk/test.apk",{cwd:config.buildPath});
+                                    })
+                                }
+                            });
+                        })
                     })
-                })
 
-            })
-        });
+                })
+            });
+        })
+
     }
 });
 
