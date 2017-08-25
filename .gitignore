@@ -1,4 +1,5 @@
 node_modules
-public/apk
-public/data
+public/apk/*.apk
+public/data/*.json
 .idea
+.DS_Store
