@@ -1,3 +1,3 @@
 module.exports = {
-    buildPath:'/Users/anjou/crm'
+    buildPath:'/home/zhangjie/android/crm'
 }
