@@ -37,7 +37,7 @@ router.get('/', function (req, res, next) {
                 if(stdout.toString().indexOf(branch)==-1){
                     console.log("本地不存在分支："+branch)
                     //本地没有这个分支，先创建这个分支
-                    exeCmd("git",["fetch","origin"+branch],res,build)
+                    exeCmd("git",["fetch","origin",branch],res,build)
                 }else {
                     console.log("本地存在分支："+branch)
                     exeCmd("git",["checkout",branch],res,function (res) {
