@@ -35,11 +35,11 @@ router.get('/', function (req, res, next) {
                 end(res);
             } else {
                 if(stdout.toString().indexOf(branch)==-1){
-                    console.log("本地不存在分支："+branch)
+                    write(res,"本地不存在分支："+branch+"从远程拉取\n");
                     //本地没有这个分支，先创建这个分支
                     exeCmd("git",["fetch","origin",branch],res,build)
                 }else {
-                    console.log("本地存在分支："+branch)
+                    write(res,"本地存在分支："+branch+",直接检出\n");
                     exeCmd("git",["checkout",branch],res,function (res) {
                         exeCmd("git",["pull","origin",branch],res,function (res) {
                             build(res)
@@ -123,7 +123,6 @@ function exeCmd(cmd, argv, res, next) {
 }
 
 function write(res, msg) {
-    console.log("end with:"+msg);
     if(onBuilding){
         res.write(msg)
     }
