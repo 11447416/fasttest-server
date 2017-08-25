@@ -37,7 +37,7 @@ router.get('/', function (req, res, next) {
                 if(stdout.toString().indexOf(branch)==-1){
                     console.log("本地不存在分支："+branch)
                     //本地没有这个分支，先创建这个分支
-                    exeCmd("git",["checkout","-b",branch,"origin/"+branch],res,build)
+                    exeCmd("git",["fetch","origin"+branch],res,build)
                 }else {
                     console.log("本地存在分支："+branch)
                     exeCmd("git",["checkout",branch],res,function (res) {
@@ -105,12 +105,14 @@ function exeCmd(cmd, argv, res, next) {
         if (0 != code) {
             //执行出错
             write(res,"任务遇到错误，已经退出!\n");
+            console.log("任务遇到错误")
             end(res);
         } else {
             //执行下一个任务
             if (next) {
                 next(res);
             } else {
+                console.log("没有下一个任务")
                 end(res)
             }
         }
