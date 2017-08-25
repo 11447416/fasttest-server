@@ -1,12 +1,12 @@
 var express = require('express');
 var process = require('child_process');
 var router = express.Router();
-var config=require('./config');
-var onBuilding=false;
+var config = require('./config');
+var onBuilding = false;
 
 //调用shell文件，完成服务器打包
-router.get('/', function(req, res, next) {
-    if(onBuilding){
+router.get('/', function (req, res, next) {
+    if (onBuilding) {
         res.send("服务器有一个打包任务未结束，请稍后再提交打包任务");
         return;
     }
@@ -15,50 +15,64 @@ router.get('/', function(req, res, next) {
     var des = req.query['des'];//描述
     var user = req.query['user'];//作者
     var type = req.query['type'];//打包 环境和类型
-    if(!branch){
+    if (!branch) {
         res.send("branch 不能为空");
-    }else if(!des){
+    } else if (!des) {
         res.send("des 不能为空");
-    }else if(!type){
+    } else if (!type) {
         res.send("type 不能为空");
-    }else if(!user){
+    } else if (!user) {
         res.send("user 不能为空");
-    }else{
-        onBuilding=true;
+    } else {
+        onBuilding = true;
         res.writeHead(200, {'Content-Type': 'text/stream; charset=utf-8'});
-        res.write("1、打包程序启动\n");
-        res.write("2、拉取远程分支"+branch+"\n");
-        exeCmd("git","fetch","origin",branch+":"+branch,function (res) {
-            exeCmd("git",["checkout",branch],res,function (res) {
-                var node=branch;
-                if(commit)node=commit;
-                res.write("3、检出代码"+node+"\n");
-                exeCmd("git",["checkout",node],res,function (res) {
-                    res.write("4、清理环境\n");
-                    exeCmd("./gradlew",["clean"],res,function (res) {
-                        res.write("5、开始编译\n");
-                        exeCmd("./gradlew",[type],res,function (res) {
-                            res.write("6、编译完成，重命名文件\n");
-                            process.exec("cp app/build/outputs/apk/*.apk app/build/outputs/apk/test.apk",{cwd:config.buildPath},function (err,stdout,stderr) {
-                                if(err){
-                                    res.write(stderr+"\n");
-                                    end(res);
-                                }else {
-                                    res.write("7、开始上传\n");
-                                    exeCmd("sh",["package.sh","-u","app/build/outputs/apk/test.apk","-n","测试打包，请忽略","-w",user],res,function (res) {
-                                        res.write("打包任务完成");
-                                        end(res)
-                                        process.exec("rm app/build/outputs/apk/test.apk",{cwd:config.buildPath});
-                                    })
-                                }
-                            });
-                        })
+        write(res,"1、打包程序启动\n");
+        write(res,"2、拉取远程分支" + branch + "\n");
+
+        process.exec("git branch", {cwd: config.buildPath}, function (err, stdout, stderr) {
+            if (err) {
+                write(res,stderr + "\n");
+                end(res);
+            } else {
+                if(stdout.toString().indexOf(branch)!=-1){
+                    //本地没有这个分支，先创建这个分支
+                    exeCmd("git",["checkout","-b",branch,"origin/"+branch],res,build)
+                }else {
+                    build(res)
+                }
+
+            }
+        });
+
+        //继续编译
+        var build=function (res) {
+            var node = branch;
+            if (commit) node = commit;
+            write(res,"3、检出代码" + node + "\n");
+            exeCmd("git", ["checkout", node], res, function (res) {
+                write(res,"4、清理环境\n");
+                exeCmd("./gradlew", ["clean"], res, function (res) {
+                    write(res,"5、开始编译\n");
+                    exeCmd("./gradlew", [type], res, function (res) {
+                        write(res,"6、编译完成，重命名文件\n");
+                        process.exec("cp app/build/outputs/apk/*.apk app/build/outputs/apk/test.apk", {cwd: config.buildPath}, function (err, stdout, stderr) {
+                            if (err) {
+                                write(res,stderr + "\n");
+                                end(res);
+                            } else {
+                                write(res,"7、开始上传\n");
+                                exeCmd("sh", ["package.sh", "-u", "app/build/outputs/apk/test.apk", "-n", "测试打包，请忽略", "-w", user], res, function (res) {
+                                    write(res,"打包任务完成");
+                                    end(res)
+                                    process.exec("rm app/build/outputs/apk/test.apk", {cwd: config.buildPath});
+                                })
+                            }
+                        });
                     })
-
                 })
-            });
-        })
 
+            })
+        }
     }
 });
 
@@ -70,40 +84,50 @@ router.get('/', function(req, res, next) {
  * @param next
  */
 function exeCmd(cmd, argv, res, next) {
-    res.write("开始执行任务："+cmd+" "+argv+"\n")
-    var exe=process.spawn(cmd,argv,{cwd:config.buildPath});
+    write(res,"开始执行任务：" + cmd + " " + argv + "\n")
+    var exe = process.spawn(cmd, argv, {cwd: config.buildPath});
     //收到数据
-    exe.stdout.on('data', function(data) {
-        res.write(data)
+    exe.stdout.on('data', function (data) {
+        write(res,data)
     });
     // 添加一个end监听器来关闭文件流
-    exe.stdout.on('end', function() {
-        res.write("任务结束："+cmd+" "+argv+"\n")
+    exe.stdout.on('end', function () {
+        write(res,"任务结束：" + cmd + " " + argv + "\n")
 
     });
     // 当子进程退出时，检查是否有错误，同时关闭文件流
-    exe.on('exit', function(code) {
-        if(0!=code){
+    exe.on('exit', function (code) {
+        if (0 != code) {
             //执行出错
-            res.write("任务遇到错误，已经退出!\n");
+            write(res,"任务遇到错误，已经退出!\n");
             end(res);
-        }else{
+        } else {
             //执行下一个任务
-            if(next){
+            if (next) {
                 next(res);
-            }else{
+            } else {
                 end(res)
             }
         }
     });
-    exe.stderr.on('data',function (data) {
-        res.write(data)
+    exe.stderr.on('data', function (data) {
+        console.log("exe.stderr.on('data':"+data)
+        write(res,data)
     })
 }
 
+function write(res, msg) {
+    if(onBuilding){
+        res.write(msg)
+    }
+}
 //统一结束返回，方便修改结束标记
 function end(res) {
-    res.end();
-    onBuilding=false;
+    console.log("结束")
+    if(onBuilding){
+        res.end();
+    }
+    onBuilding = false;
 }
+
 module.exports = router;
