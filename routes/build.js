@@ -15,6 +15,8 @@ router.get('/', function (req, res, next) {
     var des = req.query['des'];//描述
     var user = req.query['user'];//作者
     var type = req.query['type'];//打包 环境和类型
+    des=des.replace(/\s+/g,"");
+    des=des.replace("&","-");
     if (!branch) {
         res.send("branch 不能为空");
     } else if (!des) {
