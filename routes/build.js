@@ -121,6 +121,7 @@ function exeCmd(cmd, argv, res, next) {
 }
 
 function write(res, msg) {
+    console.log("end with:"+msg);
     if(onBuilding){
         res.write(msg)
     }
