@@ -64,7 +64,7 @@ router.get('/', function (req, res, next) {
                                 end(res);
                             } else {
                                 write(res,"7、开始上传\n");
-                                exeCmd("sh", ["package.sh", "-u", "app/build/outputs/apk/test.apk", "-n", "测试打包，请忽略", "-w", user], res, function (res) {
+                                exeCmd("sh", ["package.sh", "-u", "app/build/outputs/apk/test.apk", "-n", des, "-w", user,"-b",branch], res, function (res) {
                                     write(res,"打包任务完成");
                                     end(res)
                                     process.exec("rm app/build/outputs/apk/test.apk", {cwd: config.buildPath});
