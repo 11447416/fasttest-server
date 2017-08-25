@@ -114,7 +114,6 @@ function exeCmd(cmd, argv, res, next) {
         }
     });
     exe.stderr.on('data', function (data) {
-        console.log("exe.stderr.on('data':"+data)
         write(res,data)
     })
 }
@@ -126,7 +125,6 @@ function write(res, msg) {
 }
 //统一结束返回，方便修改结束标记
 function end(res) {
-    console.log("结束")
     if(onBuilding){
         res.end();
     }
