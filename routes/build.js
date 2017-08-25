@@ -34,7 +34,7 @@ router.get('/', function (req, res, next) {
                 write(res,stderr + "\n");
                 end(res);
             } else {
-                if(stdout.toString().indexOf(branch)!=-1){
+                if(stdout.toString().indexOf(branch)==-1){
                     //本地没有这个分支，先创建这个分支
                     exeCmd("git",["checkout","-b",branch,"origin/"+branch],res,build)
                 }else {
