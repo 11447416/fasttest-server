@@ -1,5 +1,5 @@
 #!/bin/bash
-while getopts "lspodru:n:w:" opt; do
+while getopts "lspodrhu:n:w:b:" opt; do
   case $opt in
     u)
       u=$OPTARG
@@ -28,18 +28,39 @@ while getopts "lspodru:n:w:" opt; do
     w)
        user=$OPTARG
        ;;
+    b)
+       branch=$OPTARG
+       ;;
+    h)
+       echo "本打包脚本的使用方法如下："
+       echo "usage: 直接上传包     sh package.sh -u filePath [-n note|-w author|-b branch]"
+       echo "       本地机打包     sh package.sh -l <-s|-p|-o> <-d|-r> [-n note|-w author|-b branch]"
+       echo "       服务器打包     sh package.sh <-s|-p|-o> <-d|-r> [-n note|-w author|-b branch]"
+       echo "默认是服务器打包模式"
+       echo "参数说明："
+       echo "-u       -> upload     直接上传文件模式"
+       echo "-l       -> local      本地打包模式"
+       echo "-s/-p/-o -> 不同的环境   staging/product/office(ip131)"
+       echo "-d/-r    -> 不同的类型   debug/release"
+       echo "-n       -> node       说明描述"
+       echo "-w       -> who        打包的人"
+       echo "-b       -> branch     分支"
+       ;;
     ?)
       echo "参数错误！"
+      echo "use -h for help"
       exit 1
       ;;
   esac
 done
 
 #读取描述信息
-branch=`git symbolic-ref --short -q HEAD`
+if [ ! $branch ];then
+  branch=`git symbolic-ref --short -q HEAD`
+fi
 log=`git log -1 --pretty=%h`
 if [ ! $user ];then
-user=`git config user.name`
+  user=`git config user.name`
 fi
 
 if [ $u ]; then
@@ -90,7 +111,7 @@ elif [ $l ]; then
   echo "本地打包完成，开始上传"
   cp app/build/outputs/apk/*.apk app/build/outputs/apk/test.apk 
   #上传
-  curl  --form "file=@app/build/outputs/apk/test.apk" --form "des=$branch($log)#$user:$descripe"  http://fasttest.dingliqc.com:3000/upload/api
+  curl  --form "file=@app/build/outputs/apk/test.apk" --form "des=$branch($log)#$user#$build:$descripe"  http://fasttest.dingliqc.com:3000/upload/api
   rm app/build/outputs/apk/test.apk
   echo "本地打包任务完成"
 else
@@ -107,11 +128,13 @@ else
   if [ $newbranch ];then 
     branch=$newbranch
   fi
-  echo "请输入需要打包的commit: （默认：$log )"
+  echo "请输入需要打包的commit: （不输入，直接打包分支$branch 的最新代码，输入后，commit优先级更高 )"
   read newlog
   if [ $newlog ];then 
     log=$newlog
-  fi
+  else
+    log=""
+   fi
   if [ ! $n ]; then
       echo "请输入升级或者修复bug描述: "
       read descripe
@@ -122,7 +145,6 @@ else
     echo "你必须输入打包描述"
     exit 1
   fi
-  echo "提交打包任务"
-  # curl http://fasttest.dingliqc.com:3000/build/?branch=$branch&commit=$log&des=$descripe&type=assemble$env$type
-  curl http://127.0.0.1:3000/build/?branch=$branch\&commit=$log\&des=$descripe\&type=assemble$env$type
+  echo "提交打包任务:$descripe"
+  curl http://fasttest.dingliqc.com:3000/build/?branch=$branch\&commit=$log\&des=$descripe\&type=assemble$env$type\&user=$user
 fi
