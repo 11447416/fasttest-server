@@ -1,0 +1,16 @@
+extends layout
+
+block content
+    h1= title
+    p=msg
+    each item in list
+        div
+            | ID:#{item.id} ->
+            a(href=item.path)='下载'
+            br
+            | 时间：#{item.time}
+            br
+            | 说明：#{item.des}
+            br
+            | ------------------
+            br
