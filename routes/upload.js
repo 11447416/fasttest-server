@@ -12,11 +12,11 @@ router.get('/', function (req, res, next) {
 
 /* 网页上传*/
 router.post('/', function (req, res, next) {
-    upload(req,res,'web');
+    upload(req, res, 'web');
 });
 /* 网页上传*/
 router.post('/api', function (req, res, next) {
-    upload(req,res,null);
+    upload(req, res, null);
 });
 
 /**
@@ -24,42 +24,42 @@ router.post('/api', function (req, res, next) {
  * @param req
  * @param res
  */
-function upload(req,res,api) {
+function upload(req, res, api) {
     //生成multiparty对象，并配置上传目标路径
-    var form = new multiparty.Form({uploadDir: process.cwd()+'/public/apk/'});
+    var form = new multiparty.Form({uploadDir: process.cwd() + '/public/apk/'});
     form.encoding = 'utf-8';
     //上传完成后处理
     form.parse(req, function (err, fields, files) {
-        if(err)throw err;
-        if(!files){
-            response(res,'请选择上传文件',api);
+        if (err) throw err;
+        if (!files) {
+            response(res, '请选择上传文件', api);
             return;
         }
         var inputFile = files.file[0];
-        if(inputFile.size<=0){
-            response(res,'请选择上传文件.',api);
+        if (inputFile.size <= 0) {
+            response(res, '请选择上传文件.', api);
             return;
         }
         var filesTmp = JSON.stringify(files, null, 2);
-        if(!fields||!fields['des']||!fields['des'][0]){
-            response(res,'升级包必须要有描述',api)
-        }else if (err) {
-            response(res,err.message,api)
+        if (!fields || !fields['des'] || !fields['des'][0]) {
+            response(res, '升级包必须要有描述', api)
+        } else if (err) {
+            response(res, err.message, api)
         } else {
 
             var uploadedPath = inputFile.path;
-            var dstPath = '/apk/' + new Date().getTime()+'.apk';
+            var dstPath = '/apk/' + new Date().getTime() + '.apk';
             //重命名为真实文件名
-            fs.rename(uploadedPath, './public'+dstPath, function (err) {
+            fs.rename(uploadedPath, './public' + dstPath, function (err) {
                 if (err) {
-                    response(res,err.message,api)
+                    response(res, err.message, api)
                 } else {
                     //跟新本地的记录文件
-                    saveRecord(dstPath,fields['des'][0],function (err) {
-                        if (err){
-                            response(res,err.message,api)
-                        }else{
-                            response(res,'上传成功',api)
+                    saveRecord(dstPath, fields['des'][0], function (err, id) {
+                        if (err) {
+                            response(res, err.message, api)
+                        } else {
+                            response(res, '上传成功,文件id：#' + id, api)
                         }
                     })
                 }
@@ -67,6 +67,7 @@ function upload(req,res,api) {
         }
     });
 }
+
 /**
  * 返回结果
  * @param res
@@ -74,12 +75,13 @@ function upload(req,res,api) {
  * @param api
  */
 function response(res, result, api) {
-    if(null==api){
+    if (null == api) {
         res.send(result)
-    }else{
-        res.render('upload', {title: '上传结果', content: result+"\n"});
+    } else {
+        res.render('upload', {title: '上传结果', content: result + "\n"});
     }
 }
+
 /**
  * 保存上传的文件
  * @param path
@@ -101,21 +103,22 @@ function saveRecord(path, des, fun) {
                 if (data && data.length > 0) {
                     jsonData = JSON.parse(data);
                 } else {
-                    jsonData = {data: [], count: 0,ret:1,msg:"获取成功"};
+                    jsonData = {data: [], count: 0, ret: 1, msg: "获取成功"};
                 }
 
-                var record = {path: path, des: des,time:new Date().getTime(),id:jsonData.data.length+1};
+                var record = {path: path, des: des, time: new Date().getTime(), id: jsonData.data.length + 1};
                 jsonData.data.push(record);
                 jsonData.count++;
                 fs.writeFile(datafile, JSON.stringify(jsonData), function (err) {
                     if (err) {
                         fun(err);
                     } else {
-                        fun();
+                        fun(undefined, record.id);
                     }
                 });
             }
         });
     });
 }
+
 module.exports = router;
