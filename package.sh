@@ -81,7 +81,7 @@ if [ $u ]; then
     echo "你必须输入打包描述"
     exit 1
   fi
-  curl  --form "file=@$u" --form "des=$branch($log)#$user:$descripe"  http://fasttest.dingliqc.com:3000/upload/api
+  curl  --form "file=@$u" --form "des=$branch($log)#$user:$descripe"  http://androidtest.ukuaiqi.com:3000/upload/api
 elif [ $l ]; then
   echo "使用本地打包模式,本地打包会直接打包当前工作空间的代码"
   echo "当前分支："$branch",当前作者："$user",当前commit："$log
@@ -111,7 +111,7 @@ elif [ $l ]; then
   echo "本地打包完成，开始上传"
   cp app/build/outputs/apk/*.apk app/build/outputs/apk/test.apk 
   #上传
-  curl  --form "file=@app/build/outputs/apk/test.apk" --form "des=$branch($log)#$user#$build:$descripe"  http://fasttest.dingliqc.com:3000/upload/api
+  curl  --form "file=@app/build/outputs/apk/test.apk" --form "des=$branch($log)#$user#$build:$descripe"  http://androidtest.ukuaiqi.com:3000/upload/api
   rm app/build/outputs/apk/test.apk
   echo "本地打包任务完成"
 else
@@ -146,5 +146,5 @@ else
     exit 1
   fi
   echo "提交打包任务:$descripe"
-  curl http://fasttest.dingliqc.com:3000/build/?branch=$branch\&commit=$log\&des=$descripe\&type=assemble$env$type\&user=$user
+  curl http://androidtest.ukuaiqi.com:3000/build/?branch=$branch\&commit=$log\&des=$descripe\&type=assemble$env$type\&user=$user
 fi
